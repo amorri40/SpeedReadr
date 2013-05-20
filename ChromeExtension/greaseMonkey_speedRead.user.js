@@ -13,7 +13,7 @@ if (window.top != window.self)  //don't run on frames or iframes
    return;
 }
 
-var i,s,ss=['https://dl.dropbox.com/s/40t2rblgah5ukon/jquery.min.js',
+var i,s,ss=['https://raw.github.com/amorri40/SpeedReadr/master/jquery.min.js',
 'https://dl.dropbox.com/s/tdf19x7ifnha9zx/speedread.js']; //https://raw.github.com/amorri40/SpeedReadr/master/speedread.js
 for(i=0;i!=ss.length;i++) {
         s=document.createElement('script');

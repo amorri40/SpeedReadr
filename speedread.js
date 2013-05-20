@@ -26,14 +26,14 @@ function main() {
 
         speedreadrDiv=document.createElement("div"); 
         speedreadrDiv.className="speedReadr";
-        speedreadrDiv.innerHTML="<div id='speedreadrWord'><div id='speedreadrCurrentWord'></div> <div><button onclick='global_paused=false; showWord();'>Play</button> <button onclick='global_paused=true'>Pause</button> <button onclick='speedreadr_gotoNextElement()'>Next Element</button> <button onclick='speedreadr_gotoPreviousElement()'>Previous Element</button> <button id='speedreadr_setparents' onclick='setParents(null)'>Set parents</button> <button id='speedreadr_setwpm' onclick='setWpm(null)'>Set wpm</button> <button id='speedreadr_setfontsize'>Set font size</button></div></div>";
+        speedreadrDiv.innerHTML="<div id='speedreadrWord'><div id='speedreadrCurrentWord'></div> <div><button onclick='speedreadr_setPause(false); showWord();'>Play</button> <button onclick='speedreadr_setPause(true)'>Pause</button> <button onclick='speedreadr_gotoNextElement()'>Next Element</button> <button onclick='speedreadr_gotoPreviousElement()'>Previous Element</button> <button id='speedreadr_setparents' onclick='setParents(null)'>Set parents</button> <button id='speedreadr_setwpm' onclick='setWpm(null)'>Set wpm</button> <button id='speedreadr_setfontsize'>Set font size</button></div></div>";
         body.appendChild(speedreadrDiv);
 
         $(speedreadrDiv).css('position','fixed');
         $(speedreadrDiv).css('bottom','0px');
         $(speedreadrDiv).css('left','25%');
         $(speedreadrDiv).css('right','25%');
-        $(speedreadrDiv).css('background','rgba(0,0,0,0.5)');
+        $(speedreadrDiv).css('background','rgba(0,0,0,0.2)');
         $(speedreadrDiv).css('border-top','20px');
         $(speedreadrDiv).css('padding-top','20px');
 
@@ -52,6 +52,18 @@ function main() {
         $('#speedreadr_setfontsize')[0].innerText="FontSize:"+speedreadr_font_size;
         $('#speedreadr_setparents')[0].innerText="Parents:"+number_of_parents;
         console.log("Speed reading!!");
+}
+
+function speedreadr_setPause(bool) {
+    if (bool) {
+        //paused
+        $(speedreadrDiv).css('background','rgba(0,0,0,0.2)');
+        global_paused=true;
+    } else {
+        //unpaused
+        $(speedreadrDiv).css('background','rgba(0,0,0,1.0)');
+        global_paused=false;
+    }
 }
 
 function setWpm(number) {
@@ -113,26 +125,39 @@ function MoveToElement() {
 
 function handleTouchEnd(e){
     if (global_paused == false) {
-        global_paused=true; 
+        speedreadr_setPause(true); 
         return; 
     } else {
-        global_paused=false;
+        speedreadr_setPause(false);
         global_i=0;
 
         global_target=e.target;
 
         console.log("how many characters:"+global_target.innerText.length);
-        if (global_target.innerText.length<70) setParents(number_of_parents+1);
+        console.log(global_target.nodeName)
+        console.log("Is this a heading:"+global_target.nodeName.search(/H[1..9]/))
+        ignoreFormatElements();
+        //if (global_target.innerText.length<70) setParents(number_of_parents+1);
 
-        for (i=0;i<number_of_parents; i++) {
-            global_target=global_target.parentElement;
-        }
+        update_target_to_no_of_parents();
         global_next_target=global_target;
         MoveToElement();
         //start the words
         setTimeout(showWord,words_per_milli);
     }
 
+}
+
+function ignoreFormatElements() {
+    var name_of_node=global_target.nodeName;
+    if (name_of_node=="B") setParents(number_of_parents+1);
+    if (name_of_node=="STRONG") setParents(number_of_parents+1);
+}
+
+function update_target_to_no_of_parents() {
+    for (i=0;i<number_of_parents; i++) {
+            global_target=global_target.parentElement;
+        }
 }
 
 function getWordListFromString(text) {
