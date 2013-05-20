@@ -115,10 +115,57 @@ else {
 }
 }
 
+function move_up_element_tree(el) {
+    console.log("We are trying to get sibling of the parent of:"+el.nodeName);
+        console.log(el);
+        console.log("The parent is :"+el.parentElement.nodeName)
+        console.log(el.parentElement);
+        var parent_sibling = el.parentElement.nextElementSibling;
+        if (parent_sibling==null) {
+            console.log('unfortunetly this parent doesnt have a sibling');
+            return move_up_element_tree(el.parentElement);
+        }
+        console.log("the next target shall be:"+parent_sibling);
+        global_next_target=move_down_element_tree(parent_sibling);
+}
+
+function move_down_element_tree(el) {
+    console.log("move_down into "+el.nodeName);
+    //if (el==null) return null;
+    console.log(el);
+    if (el.nodeName=="P") return el;
+    if (el.nodeName=="IFRAME"|| el.nodeName=="SCRIPT") {
+        console.log("ignoring:"+el.nodeName);
+        //ignore these elements
+        if (el.nextElementSibling!=null)
+        return move_down_element_tree(el.nextElementSibling); //move back up to ignore iframes
+        else
+            return move_up_element_tree(el);
+    }
+    if (el.firstChild == null) return el; //no child
+    if (el.firstChild.childElementCount>0) return move_down_element_tree(el.firstChild);
+    else {
+        console.log('no child elements for:'+el.firstChild.nodeName);
+        return el;
+    }
+}
+
 function MoveToElement() {
     if (global_target==null) return;
+
+    if (global_next_target==null) {
+        move_up_element_tree(global_target);
+    }
+
     global_target=global_next_target;
-    global_next_target=global_target.nextElementSibling;
+    if (global_target.nextElementSibling !=null) {
+        global_next_target=move_down_element_tree(global_target.nextElementSibling);
+    } else {
+        console.log('no next sibling');
+        global_next_target=move_up_element_tree(global_target);
+    }
+
+
     current_element_words=getWordListFromString(global_target.textContent);
     $(global_target).css('background-color','rgba(255, 251, 204,0.5)');
     global_target.scrollIntoViewIfNeeded();
