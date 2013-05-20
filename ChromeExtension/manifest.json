@@ -1,0 +1,19 @@
+{
+    "manifest_version": 2,
+    "icons": {
+    "128": "icon_128.png"
+  },
+    "content_scripts": [ {
+        "exclude_globs":    [  ],
+        "include_globs":    [ "*" ],
+        "js":               [ "greaseMonkey_speedRead.user.js" ],
+        "matches":          [   "http://*/*",
+                                "https://*/*"
+                            ],
+        "run_at": "document_end"
+    } ],
+    "converted_from_user_script": true,
+    "description":  "Speed read the web!",
+    "name":         "SpeedReadr",
+    "version":      "0.61"
+}
