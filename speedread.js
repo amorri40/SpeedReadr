@@ -16,6 +16,9 @@ global_paused=true;
 global_i=0;
 current_element_words="";
 
+global_target={};
+global_next_target={};
+
 function main() {
     console.log('start of speedreadr');
 
@@ -85,7 +88,6 @@ function showWord() {
     if (global_paused) return;
     if (current_element_words.length>global_i) {
         $('#speedreadrCurrentWord')[0].innerText=current_element_words[global_i];
-        //console.log(global_i);
         setTimeout(showWord,words_per_milli);
         global_i=global_i+1;
     }
@@ -109,26 +111,6 @@ function MoveToElement() {
     global_target.scrollIntoViewIfNeeded();
 }
 
-/*for (i=0; i<body.childElementCount; i++) {
-    el=body.children[i]; 
-    
-    $(el).click(function() {console.log($(this)[0].innerText);});
-}*/
-
-//html_content=load_web_page("")
-// get body text
-// get_parts_with most text
-// parse settings for text not to speed read
-
-
-//create an interface with bootstrap and then when injecting create a modal dialog
-//inject by adding a script tag that runs of a specific key press
-
-
-
-global_target={};
-global_next_target={};
-//new style 
 function handleTouchEnd(e){
     if (global_paused == false) {
         global_paused=true; 
@@ -151,7 +133,6 @@ function handleTouchEnd(e){
         setTimeout(showWord,words_per_milli);
     }
 
-   //console.log(text);// better option, as it returns text only
 }
 
 function getWordListFromString(text) {
@@ -160,11 +141,10 @@ function getWordListFromString(text) {
 }
 
 document.addEventListener('dblclick', handleTouchEnd, false);
-//document.addEventListener('load', main, false);
-//main();
-//window.onload=main;
 
-
+/*
+ Wait for JQuery to be loaded before running this script
+*/
 function checkJquery() {
     if (window.jQuery) {
         main();
@@ -174,6 +154,4 @@ function checkJquery() {
 }
 
 checkJquery();
-
-//$('document').ready(main);
 
