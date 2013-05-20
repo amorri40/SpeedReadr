@@ -36,6 +36,7 @@ function main() {
         $(speedreadrDiv).css('background','rgba(0,0,0,0.2)');
         $(speedreadrDiv).css('border-top','20px');
         $(speedreadrDiv).css('padding-top','20px');
+        $(speedreadrDiv).css('z-index','999'); //make sure this is always on top of everything
 
 
         $(speedreadrDiv).css('background','-webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(47%,#f6f6f6), color-stop(100%,#ededed)) -webkit-linear-gradient(top, #ffffff 0%,#f6f6f6 47%,#ededed 100%) -o-linear-gradient(top, #ffffff 0%,#f6f6f6 47%,#ededed 100%) -ms-linear-gradient(top, #ffffff 0%,#f6f6f6 47%,#ededed 100%)')
@@ -128,6 +129,7 @@ function handleTouchEnd(e){
         speedreadr_setPause(true); 
         return; 
     } else {
+        setParents(0); //initialise parents
         speedreadr_setPause(false);
         global_i=0;
 
@@ -135,7 +137,8 @@ function handleTouchEnd(e){
 
         console.log("how many characters:"+global_target.innerText.length);
         console.log(global_target.nodeName)
-        console.log("Is this a heading:"+global_target.nodeName.search(/H[1..9]/))
+        global_target.is_heading=(global_target.nodeName.search(/H[1..9]/)==0);
+        console.log("Is this a heading:"+global_target.is_heading);
         ignoreFormatElements();
         //if (global_target.innerText.length<70) setParents(number_of_parents+1);
 
