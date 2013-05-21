@@ -247,14 +247,11 @@ function handleTouchEnd(e){
 
         global_target=move_down_element_tree(e.target);
 
-        //console.log("how many characters:"+global_target.innerText.length);
         console.log(global_target.nodeName)
-        //global_target.is_heading=(global_target.nodeName.search(/H[1..9]/)==0);
-        //console.log("Is this a heading:"+global_target.is_heading);
+        
         ignoreFormatElements();
-        //if (global_target.innerText.length<70) setParents(number_of_parents+1);
+        
 
-        update_target_to_no_of_parents();
         global_next_target=global_target;
         MoveToElement();
         //start the words
@@ -269,21 +266,40 @@ function ignoreFormatElements() {
     if (name_of_node=="STRONG") setParents(number_of_parents+1);
 }
 
-function update_target_to_no_of_parents() {
-    /*for (i=0;i<number_of_parents; i++) {
-            global_target=global_target.parentElement;
-        }*/
+/*
+ getWordListFromString takes in a String and returns a word list, but it performs
+ a certain number of basic text modifications in order to improve the readig experience
+*/
+function getWordListFromString(text) {
+    text=text.replace('->',' -> '); // arrows are often used to seperate steps in tutorials
+    wordList=text.replace(/[\r\n]/g,' ').replace(/ +(?= )/g,' ').replace(/\s\s/gi,' ').split(' '); //replace whitespace //.replace(/\./g,' ')
+    wordList=cleanWordList(wordList);
+    return wordList;
 }
 
-function getWordListFromString(text) {
-    text=text.replace('->',' -> ');
-    return text.replace(/[\r\n]/g,' ').replace(/\./g,' ').replace(/ +(?= )/g,' ').replace(/\s\s/gi,' ').split(' ');
+/*
+ Removes blank strings and urls from the word list as there is no point displaying a long url when speed reading
+*/
+function cleanWordList(list){
+  var returnList = new Array();
+  for(var i = 0; i<list.length; i++){
+      if (list[i].indexOf('http://')!=0 && list[i]!=''){
+        returnList.push(list[i]);
+    }
+  }
+  return returnList;
 }
+
+/*
+ Event handling code
+ On double click: start the speed reader
+ On right click: pause the speed reader
+ */
 
 document.addEventListener('dblclick', handleTouchEnd, false);
-document.addEventListener('contextmenu', handleClick, false);
+document.addEventListener('contextmenu', handleRightClick, false);
 
-function handleClick(e) {
+function handleRightClick(e) {
     if (!global_paused) speedreadr_setPause(true);
 } 
 /*
