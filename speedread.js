@@ -149,14 +149,20 @@ else {
 }
 
 function move_up_element_tree(el) {
+    /*
+        check if we need to add a delay for any elements we pass (either the current element or parent) 
+    */
         delay_for_nodes(el,true);
-        //delay_for_nodes(el.parentElement,true);
+        delay_for_nodes(el.parentElement,true);
+
+    /*
+     We move up by getting the parentElement and then along to get its sibling
+    */
         var parent_sibling = el.parentElement.nextSibling;
-        if (parent_sibling==null) {
-            
+        if (parent_sibling==null)
             return move_up_element_tree(el.parentElement);
-        }
-        global_next_target=move_down_element_tree(parent_sibling);
+        else
+            return move_down_element_tree(parent_sibling); // [TODO] shouldn't this be return?
 }
 
 /*
@@ -165,16 +171,16 @@ function move_up_element_tree(el) {
 */
 function move_down_element_tree(el) {
     delay_for_nodes(el,false);
+
     if (el.nodeName=="#text") return el;
     if (el.nodeName=="P") return el;
     if (el.nodeName=="A") return el;
     if (el.nodeName=="IFRAME"|| el.nodeName=="SCRIPT" || el.nodeName=="#comment") {
-        console.log("ignoring:"+el.nodeName);
-        //ignore these elements
+        // we want to ignore these elements by either going to next sibling or mving back to parent
         if (el.nextSibling!=null)
-        return move_down_element_tree(el.nextSibling); //move back up to ignore iframes
+            return move_down_element_tree(el.nextSibling); //move to the next sibling
         else
-            return move_up_element_tree(el);
+            return move_up_element_tree(el); //no sibling so move back up the tree
     }
     if (el.firstChild == null) return el; //no child
     if (el.firstChild.childNodes>0) return move_down_element_tree(el.firstChild);
@@ -201,7 +207,7 @@ function delay_for_nodes(el,isToBeRemoved) {
         else {
             global_next_time_delay=500;
         }
-    }
+    } 
 }
 
 function MoveToElement() {
@@ -244,9 +250,6 @@ function speedreadr_handleDoubleClick(e){
         global_target=move_down_element_tree(e.target);
 
         console.log(global_target.nodeName)
-        
-       // ignoreFormatElements();
-        
 
         global_next_target=global_target;
         MoveToElement();
@@ -254,12 +257,6 @@ function speedreadr_handleDoubleClick(e){
         setTimeout(showWord,words_per_milli);
     }
 
-}
-
-function ignoreFormatElements() {
-    var name_of_node=global_target.nodeName;
-    if (name_of_node=="B") setParents(number_of_parents+1);
-    if (name_of_node=="STRONG") setParents(number_of_parents+1);
 }
 
 /*
