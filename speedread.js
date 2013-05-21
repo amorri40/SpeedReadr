@@ -12,6 +12,7 @@ words_per_milli=1000/words_per_second;
 
 number_of_parents=0;
 global_paused=true;
+speedreadr_total_words=0;
 
 global_i=0;
 current_element_words="";
@@ -28,7 +29,7 @@ function main() {
 
         speedreadrDiv=document.createElement("div"); 
         speedreadrDiv.className="speedReadr";
-        speedreadrDiv.innerHTML="<div id='speedreadrWord'><div id='speedreadrCurrentWord'></div> <div id='speedreadr_buttonDiv'><button class='speedreadrButton' onclick='play_pause_button()' id='speedreadr_playPause'>Play</button> <button class='speedreadrButton' onclick='speedreadr_gotoNextElement()'>Next Element</button> <button class='speedreadrButton' onclick='speedreadr_gotoPreviousElement()'>Previous Element</button> <button class='speedreadrButton' id='speedreadr_setparents' onclick='setParents(null)'>Set parents</button> <button class='speedreadrButton' id='speedreadr_setwpm' onclick='setWpm(null)'>Set wpm</button> <button class='speedreadrButton' id='speedreadr_setfontsize'>Set font size</button></div></div>";
+        speedreadrDiv.innerHTML="<div id='speedreadrWord'><div id='speedreadrCurrentWord'></div> <div id='speedreadr_buttonDiv'><button class='speedreadrButton' onclick='play_pause_button()' id='speedreadr_playPause'>Play</button> <button class='speedreadrButton' onclick='speedreadr_gotoNextElement()'>Next Element</button> <button class='speedreadrButton' onclick='speedreadr_gotoPreviousElement()'>Previous Element</button> <button class='speedreadrButton' id='speedreadr_setparents' onclick='setParents(null)'>Set parents</button> <button class='speedreadrButton' id='speedreadr_setwpm' onclick='setWpm(null)'>Set wpm</button> <button class='speedreadrButton' id='speedreadr_setfontsize'>Set font size</button> <span id='speedreadr_showStats'></span></div></div>";
         body.appendChild(speedreadrDiv);
 
         $(speedreadrDiv).css('position','fixed');
@@ -44,7 +45,7 @@ function main() {
 
         $('#speedreadr_buttonDiv').css('background','rgba(0,0,0,0.0)');
 
-        $('.speedreadrButton').css('font','bold 0.7em Verdana, Geneva, sans-serif');
+        $('#speedreadr_buttonDiv').css('font','bold 0.7em Verdana, Geneva, sans-serif');
         $('.speedreadrButton').css('color','rgb(255, 255, 255)');
         $('.speedreadrButton').css('background','-webkit-gradient( linear, left top, left bottom, from(rgb(18, 159, 253)), to(rgb(0, 103, 171)))');
         $('.speedreadrButton').css('box-shadow','0px 1px 3px rgba(000, 000, 000, 0.5), inset 0px 0px 2px rgba(255, 255, 255, 0.7)');
@@ -68,6 +69,8 @@ function main() {
         $('#speedreadr_setwpm')[0].innerText="Wpm:"+speedreaderWPM;
         $('#speedreadr_setfontsize')[0].innerText="FontSize:"+speedreadr_font_size;
         $('#speedreadr_setparents')[0].innerText="Parents:"+number_of_parents;
+
+        $('#speedreadr_showStats').css('color','rgb(255, 255, 255)');
 
         console.log("Speed reading!!");
 }
@@ -123,10 +126,12 @@ function speedreadr_gotoNextElement() {
 */
 function showWord() {
     if (global_paused) return;
+    speedreadr_total_words++;
+    $('#speedreadr_showStats')[0].innerText="Total words:"+speedreadr_total_words+" Delay:"+global_target_time_delay;
     if (current_element_words.length>global_i) {
         $('#speedreadrCurrentWord')[0].innerText=current_element_words[global_i];
         setTimeout(showWord,words_per_milli+global_target_time_delay);
-        global_target_time_delay=global_next_time_delay;
+        //global_target_time_delay=global_next_time_delay;
         global_i=global_i+1;
     }
 else { 
@@ -145,7 +150,8 @@ function move_up_element_tree(el) {
     
    // console.log("We are trying to get sibling of the parent of:"+el.nodeName+" "+el.innerHTML);
    //     console.log("The parent is :"+el.parentElement.nodeName+" "+el.parentElement.innerHTML)
-        
+        delay_for_nodes(el,true);
+        delay_for_nodes(el.parentElement,true);
         var parent_sibling = el.parentElement.nextSibling;
         if (parent_sibling==null) {
             //console.log('unfortunetly this parent doesnt have a sibling');
@@ -158,9 +164,10 @@ function move_up_element_tree(el) {
 function move_down_element_tree(el) {
    // console.log("move_down into "+el.nodeName+el.innerHTML);
     //if (el==null) return null;
-    delay_for_nodes(el);
+    delay_for_nodes(el,false);
     if (el.nodeName=="#text") return el;
     if (el.nodeName=="P") return el;
+    if (el.nodeName=="A") return el;
     if (el.nodeName=="IFRAME"|| el.nodeName=="SCRIPT" || el.nodeName=="#comment") {
         console.log("ignoring:"+el.nodeName);
         //ignore these elements
@@ -173,7 +180,7 @@ function move_down_element_tree(el) {
     if (el.firstChild.childNodes>0) return move_down_element_tree(el.firstChild);
     else {
         //console.log('no child elements for:'+el.firstChild.nodeName+' so we will return it');
-        if (el.firstChild.nodeName=="#text") {
+        /*if (el.firstChild.nodeName=="#text") {
            // console.log("#text node so return parent");
             
             return el;
@@ -181,27 +188,38 @@ function move_down_element_tree(el) {
             if (el.firstChild.nextSibling !=null)
                 return move_down_element_tree(el.firstChild.nextSibling) //is there a sibling to the comment return it
             else return move_up_element_tree(el.firstChild); //no sibling so move back up and ignore the comment
-        }
+        }*/
 
         return el.firstChild;
     }
 }
 
-function delay_for_nodes(el) {
-    if (el.nodeName=="LI") {
-        console.log("List Item");
-        global_next_time_delay=100;
+function delay_for_nodes(el,isToBeRemoved) {
+    if (el.nodeName=="LI" || el.nodeName=="OL" || el.nodeName=="UL") {
+        console.log("Add List Item delay");
+        if (isToBeRemoved) global_next_time_delay=0;
+        else
+            global_next_time_delay=100;
+    } else if (el.nodeName.search(/H[1..9]/)==0) {
+        console.log("Add Heading delay to"+el.nodeName+" remove?"+isToBeRemoved);
+        if (isToBeRemoved) {
+            global_next_time_delay=0;
+        }
+        else {
+            global_next_time_delay=500;
+        }
     }
 }
 
 function MoveToElement() {
-    global_next_time_delay=0;
+    
     if (global_target==null) return;
 
     if (global_next_target==null) {
         move_up_element_tree(global_target);
     }
-
+    delay_for_nodes(global_target,true); //remove delay for previous target
+    global_target_time_delay = global_next_time_delay;
     global_target=global_next_target;
     if (global_target.nextSibling !=null) {
         global_next_target=move_down_element_tree(global_target.nextSibling);
@@ -229,10 +247,10 @@ function handleTouchEnd(e){
 
         global_target=move_down_element_tree(e.target);
 
-        console.log("how many characters:"+global_target.innerText.length);
+        //console.log("how many characters:"+global_target.innerText.length);
         console.log(global_target.nodeName)
-        global_target.is_heading=(global_target.nodeName.search(/H[1..9]/)==0);
-        console.log("Is this a heading:"+global_target.is_heading);
+        //global_target.is_heading=(global_target.nodeName.search(/H[1..9]/)==0);
+        //console.log("Is this a heading:"+global_target.is_heading);
         ignoreFormatElements();
         //if (global_target.innerText.length<70) setParents(number_of_parents+1);
 
@@ -263,7 +281,11 @@ function getWordListFromString(text) {
 }
 
 document.addEventListener('dblclick', handleTouchEnd, false);
+document.addEventListener('contextmenu', handleClick, false);
 
+function handleClick(e) {
+    if (!global_paused) speedreadr_setPause(true);
+} 
 /*
  Wait for JQuery to be loaded before running this script
 */
