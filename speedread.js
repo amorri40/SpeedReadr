@@ -22,8 +22,10 @@ global_next_target={};
 global_target_time_delay=0;
 global_next_time_delay=0;
 
+/*
+ The main function is called when jquery has loaded to setup the main interface
+*/
 function main() {
-    console.log('start of speedreadr');
 
         var body=$('body')[0];
 
@@ -147,23 +149,21 @@ else {
 }
 
 function move_up_element_tree(el) {
-    
-   // console.log("We are trying to get sibling of the parent of:"+el.nodeName+" "+el.innerHTML);
-   //     console.log("The parent is :"+el.parentElement.nodeName+" "+el.parentElement.innerHTML)
         delay_for_nodes(el,true);
-        delay_for_nodes(el.parentElement,true);
+        //delay_for_nodes(el.parentElement,true);
         var parent_sibling = el.parentElement.nextSibling;
         if (parent_sibling==null) {
-            //console.log('unfortunetly this parent doesnt have a sibling');
+            
             return move_up_element_tree(el.parentElement);
         }
-      //  console.log("the next target shall be:"+parent_sibling);
         global_next_target=move_down_element_tree(parent_sibling);
 }
 
+/*
+ Moves down the DOM from the element el until it finds a node which can be read, when it finds one it returns it
+ Note: this function is recursive
+*/
 function move_down_element_tree(el) {
-   // console.log("move_down into "+el.nodeName+el.innerHTML);
-    //if (el==null) return null;
     delay_for_nodes(el,false);
     if (el.nodeName=="#text") return el;
     if (el.nodeName=="P") return el;
@@ -179,21 +179,14 @@ function move_down_element_tree(el) {
     if (el.firstChild == null) return el; //no child
     if (el.firstChild.childNodes>0) return move_down_element_tree(el.firstChild);
     else {
-        //console.log('no child elements for:'+el.firstChild.nodeName+' so we will return it');
-        /*if (el.firstChild.nodeName=="#text") {
-           // console.log("#text node so return parent");
-            
-            return el;
-        } else if (el.firstChild.nodeName=="#comment") {
-            if (el.firstChild.nextSibling !=null)
-                return move_down_element_tree(el.firstChild.nextSibling) //is there a sibling to the comment return it
-            else return move_up_element_tree(el.firstChild); //no sibling so move back up and ignore the comment
-        }*/
-
         return el.firstChild;
     }
 }
 
+/*
+ delay_for_nodes either adds or removes a time delay based on which element was just parsed in the DOM tree
+ This is useful for addig a delay on list items and removing the delay when moving back up out of the list
+*/
 function delay_for_nodes(el,isToBeRemoved) {
     if (el.nodeName=="LI" || el.nodeName=="OL" || el.nodeName=="UL") {
         console.log("Add List Item delay");
@@ -236,7 +229,10 @@ function MoveToElement() {
         global_target.scrollIntoViewIfNeeded();
 }
 
-function handleTouchEnd(e){
+/*
+ speedreadr_handleDoubleClick is called on double click in order to start the speed reader at the words that was double clicked
+*/
+function speedreadr_handleDoubleClick(e){
     if (global_paused == false) {
         speedreadr_setPause(true); 
         return; 
@@ -249,7 +245,7 @@ function handleTouchEnd(e){
 
         console.log(global_target.nodeName)
         
-        ignoreFormatElements();
+       // ignoreFormatElements();
         
 
         global_next_target=global_target;
@@ -273,14 +269,14 @@ function ignoreFormatElements() {
 function getWordListFromString(text) {
     text=text.replace('->',' -> '); // arrows are often used to seperate steps in tutorials
     wordList=text.replace(/[\r\n]/g,' ').replace(/ +(?= )/g,' ').replace(/\s\s/gi,' ').split(' '); //replace whitespace //.replace(/\./g,' ')
-    wordList=cleanWordList(wordList);
+    wordList=speedreadr_cleanWordList(wordList);
     return wordList;
 }
 
 /*
  Removes blank strings and urls from the word list as there is no point displaying a long url when speed reading
 */
-function cleanWordList(list){
+function speedreadr_cleanWordList(list){
   var returnList = new Array();
   for(var i = 0; i<list.length; i++){
       if (list[i].indexOf('http://')!=0 && list[i]!=''){
@@ -296,7 +292,7 @@ function cleanWordList(list){
  On right click: pause the speed reader
  */
 
-document.addEventListener('dblclick', handleTouchEnd, false);
+document.addEventListener('dblclick', speedreadr_handleDoubleClick, false);
 document.addEventListener('contextmenu', handleRightClick, false);
 
 function handleRightClick(e) {
@@ -306,7 +302,7 @@ function handleRightClick(e) {
  Wait for JQuery to be loaded before running this script
 */
 function checkJquery() {
-    if (window.jQuery) {
+    if ($) { //check if jquery is defined
         main();
     } else {
         window.setTimeout(checkJquery, 100);
