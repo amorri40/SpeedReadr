@@ -3,11 +3,15 @@ Bookmarklet: javascript:var%20i,s,ss = ['https://dl.dropbox.com/s/8yg9z7vt77thyj
 */
 
 /*
- JSLint comments
+ JSHint comments
 */
 /*global $, jQuery, document*/
 
 var speedreadr = function () {
+
+    /*
+     Field variables
+    */
     var speedreadr_font_size = '4em';
     var speedreadr_font_weight = 'bold';
     var speedreaderWPM = 350;
@@ -28,6 +32,7 @@ var speedreadr = function () {
     var global_target_time_delay = 0;
     var global_next_time_delay = 0;
     var speedreadrDiv;
+
 
     /*
      The main function is called when jquery has loaded to setup the main interface
@@ -118,7 +123,7 @@ var speedreadr = function () {
     }
 
     function speedreadr_setProperty(number,question,element,property_name,property_to_set) {
-        if (number==null)
+        if (number===null)
         property_to_set = window.prompt(question,property_to_set);
         else property_to_set = number;
 
@@ -138,12 +143,12 @@ var speedreadr = function () {
             //global_target_time_delay = global_next_time_delay;
             global_i=global_i + 1;
         }
-    else { 
+    else {
         global_i = 0;
-        
+       
         //now move on to the next element
         $(global_target).css('background-color', 'rgba(144,238,144,0.4)'); //set the finished element to green
-        
+
         MoveToElement();
         //start the words
         setTimeout(showWord,words_per_milli);
@@ -161,7 +166,7 @@ var speedreadr = function () {
          We move up by getting the parentElement and then along to get its sibling
         */
             var parent_sibling = el.parentElement.nextSibling;
-            if (parent_sibling==null)
+            if (parent_sibling===null)
                 return move_up_element_tree(el.parentElement);
             else
                 return move_down_element_tree(parent_sibling); // [TODO] shouldn't this be return?
@@ -180,12 +185,12 @@ var speedreadr = function () {
         if (el.nodeName=="A") return el;
         if (el.nodeName=="IFRAME"|| el.nodeName=="SCRIPT" || el.nodeName=="#comment") {
             // we want to ignore these elements by either going to next sibling or mving back to parent
-            if (el.nextSibling!=null)
+            if (el.nextSibling !== null)
                 return move_down_element_tree(el.nextSibling); //move to the next sibling
             else
                 return move_up_element_tree(el); //no sibling so move back up the tree
         }
-        if (el.firstChild == null) return el; //no child
+        if (el.firstChild === null) return el; //no child
         if (el.firstChild.childNodes>0) return move_down_element_tree(el.firstChild);
         else {
             return el.firstChild;
@@ -202,7 +207,7 @@ var speedreadr = function () {
             if (isToBeRemoved) global_next_time_delay = 0;
             else
                 global_next_time_delay = 100;
-        } else if (el.nodeName.search(/H[1..9]/)==0) {
+        } else if (el.nodeName.search(/H[1..9]/) === 0) {
             console.log("Add Heading delay to" + el.nodeName + " remove?" + isToBeRemoved);
             if (isToBeRemoved) {
                 global_next_time_delay = 0;
@@ -210,20 +215,20 @@ var speedreadr = function () {
             else {
                 global_next_time_delay = 500;
             }
-        } 
+        }
     }
 
     function MoveToElement() {
-        
-        if (global_target==null) return;
 
-        if (global_next_target==null) {
+        if (global_target===null) return;
+
+        if (global_next_target===null) {
             move_up_element_tree(global_target);
         }
         delay_for_nodes(global_target,true); //remove delay for previous target
         global_target_time_delay = global_next_time_delay;
         global_target = global_next_target;
-        if (global_target.nextSibling !=null) {
+        if (global_target.nextSibling !== null) {
             global_next_target = move_down_element_tree(global_target.nextSibling);
         } else {
             console.log('no next sibling');
@@ -234,7 +239,7 @@ var speedreadr = function () {
 
         current_element_words = getWordListFromString(global_target.textContent);
         $(global_target).css('background-color', 'rgba(255, 251, 204,0.5)');
-        if (global_target.scrollIntoViewIfNeeded != null)
+        if (global_target.scrollIntoViewIfNeeded !== null)
             global_target.scrollIntoViewIfNeeded();
     }
 
@@ -242,9 +247,9 @@ var speedreadr = function () {
      speedreadr_handleDoubleClick is called on double click in order to start the speed reader at the words that was double clicked
     */
     function speedreadr_handleDoubleClick(e){
-        if (global_paused == false) {
-            speedreadr_setPause(true); 
-            return; 
+        if (global_paused === false) {
+            speedreadr_setPause(true);
+            return;
         } else {
             $(speedreadrDiv).show();
             speedreadr_setPause(false);
@@ -252,7 +257,7 @@ var speedreadr = function () {
 
             global_target = move_down_element_tree(e.target);
 
-            console.log(global_target.nodeName)
+            console.log(global_target.nodeName);
 
             global_next_target = global_target;
             MoveToElement();
@@ -277,9 +282,9 @@ var speedreadr = function () {
      Removes blank strings and urls from the word list as there is no point displaying a long url when speed reading
     */
     function speedreadr_cleanWordList(list){
-      var returnList = new Array();
+      var returnList = [];
       for(var i = 0; i<list.length; i++){
-          if (list[i].indexOf('http://')!=0 && list[i]!=''){
+          if (list[i].indexOf('http://')!==0 && list[i]!==''){
             returnList.push(list[i]);
         }
       }
@@ -298,7 +303,7 @@ var speedreadr = function () {
 
     function handleRightClick(e) {
         if (!global_paused) speedreadr_setPause(true);
-    } 
+    }
     /*
      Wait for JQuery to be loaded before running this script
     */
@@ -314,11 +319,11 @@ var speedreadr = function () {
 
     return {
         play_pause_button : function() {
-            speedreadr_setPause(!global_paused); 
+            speedreadr_setPause(!global_paused);
             showWord();
         },
         speedreadr_gotoNextElement : function() {
-            MoveToElement(); 
+            MoveToElement();
         },
         close : function() {
         $(speedreadrDiv).hide();
