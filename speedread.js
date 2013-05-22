@@ -33,6 +33,7 @@ var speedreadr = function () {
     var global_next_time_delay = 0;
     var speedreadrDiv;
 
+    var global_moved_up=false;
 
     /*
      The main function is called when jquery has loaded to setup the main interface
@@ -86,7 +87,6 @@ var speedreadr = function () {
 
         $('#speedreadr_setwpm')[0].innerText = "Wpm:" + speedreaderWPM;
         $('#speedreadr_setfontsize')[0].innerText = "FontSize:" + speedreadr_font_size;
-        //$('#speedreadr_setparents')[0].innerText="Parents:" + number_of_parents;
 
         $('#speedreadr_showStats').css('color', 'rgb(255, 255, 255)');
 
@@ -104,6 +104,7 @@ var speedreadr = function () {
             $(speedreadrDiv).css('background', 'rgba(0,0,0,1.0)');
             global_paused = false;
             $('#speedreadr_playPause')[0].innerText = "Pause";
+            showWord();
         }
     }
 
@@ -111,15 +112,6 @@ var speedreadr = function () {
         speedreadr_setProperty(number,"How many words per minute?", '#speedreadr_setwpm', "WPM:", speedreaderWPM);
         words_per_second = speedreaderWPM/60;
         words_per_milli = 1000/words_per_second;
-    }
-
-
-    function setParents(number) {
-       /* if (number==null)
-        number_of_parents=window.prompt("How many parent elements from selection to read?",number_of_parents);
-        else number_of_parents=number;
-
-        $('#speedreadr_setparents')[0].innerText="Parents:"+number_of_parents;*/
     }
 
     function speedreadr_setProperty(number,question,element,property_name,property_to_set) {
@@ -140,19 +132,35 @@ var speedreadr = function () {
         if (current_element_words.length>global_i) {
             $('#speedreadrCurrentWord')[0].innerText = current_element_words[global_i];
             setTimeout(showWord,words_per_milli + global_target_time_delay);
-            //global_target_time_delay = global_next_time_delay;
+            
             global_i=global_i + 1;
         }
-    else {
-        global_i = 0;
-       
-        //now move on to the next element
-        $(global_target).css('background-color', 'rgba(144,238,144,0.4)'); //set the finished element to green
-
-        MoveToElement();
-        //start the words
-        setTimeout(showWord,words_per_milli);
+        else {
+            global_i = 0;
+            setFinishedColorForElement(global_target);
+            //now move on to the next element            
+            MoveToNextElement();
+            
+            setTimeout(showWord,words_per_milli);
+        }
     }
+
+/*
+ Takes in an element and sets the background colour to indicate it has finished
+*/
+    function setFinishedColorForElement(el) {
+        $(el).css('background-color', 'rgba(144,238,144,0.4)'); //set the finished element to green
+        if (global_moved_up)
+            $(el.parentElement).css('background-color', 'rgba(144,238,144,0.4)'); //we moved up the DOM so do the same for the parent
+    }
+
+/*
+ Takes in an element and sets the background colour to indicate it is about to be read out
+*/
+    function setReadingColorForElement(el) {
+        $(el).css('background-color', 'rgba(255, 251, 204,0.5)'); //set the element currently being read to yelowish
+        if (global_moved_up)
+            $(el.parentElement).css('background-color', 'rgba(255, 251, 204,0.5)'); //we moved up the DOM so do the same for the parent
     }
 
     function move_up_element_tree(el) {
@@ -161,7 +169,7 @@ var speedreadr = function () {
         */
             delay_for_nodes(el,true);
             delay_for_nodes(el.parentElement,true);
-
+            global_moved_up=true;
         /*
          We move up by getting the parentElement and then along to get its sibling
         */
@@ -218,28 +226,37 @@ var speedreadr = function () {
         }
     }
 
-    function MoveToElement() {
+    /*
+        Moves from the target to the next target
+    */
+    function MoveToNextElement() {
 
         if (global_target===null) return;
 
         if (global_next_target===null) {
             move_up_element_tree(global_target);
         }
+        //reset some variables
         delay_for_nodes(global_target,true); //remove delay for previous target
+        global_moved_up=false;
+
+        //now lets move to the next target
         global_target_time_delay = global_next_time_delay;
         global_target = global_next_target;
+
+        //now before we start the current target lets get the next target
         if (global_target.nextSibling !== null) {
             global_next_target = move_down_element_tree(global_target.nextSibling);
         } else {
-            console.log('no next sibling');
             global_next_target = move_up_element_tree(global_target);
         }
 
-
-
+        //now that we have the target lets get the word list from it
         current_element_words = getWordListFromString(global_target.textContent);
-        $(global_target).css('background-color', 'rgba(255, 251, 204,0.5)');
-        if (global_target.scrollIntoViewIfNeeded !== null)
+
+        //to make sure the user knows where it is reading lets scroll to the element we are currently reading
+        setReadingColorForElement(global_target);
+        if (global_target.scrollIntoViewIfNeeded !== undefined)
             global_target.scrollIntoViewIfNeeded();
     }
 
@@ -252,17 +269,13 @@ var speedreadr = function () {
             return;
         } else {
             $(speedreadrDiv).show();
-            speedreadr_setPause(false);
+            
             global_i = 0;
 
             global_target = move_down_element_tree(e.target);
-
-            console.log(global_target.nodeName);
-
-            global_next_target = global_target;
-            MoveToElement();
-            //start the words
-            setTimeout(showWord,words_per_milli);
+            global_next_target = global_target; //initialise next target?
+            MoveToNextElement();
+            speedreadr_setPause(false);
         }
 
     }
@@ -299,7 +312,7 @@ var speedreadr = function () {
 
     document.addEventListener('dblclick', speedreadr_handleDoubleClick, false);
     document.addEventListener('contextmenu', handleRightClick, false);
-    $(speedreadrDiv).click(speedreadr.play_pause_button);
+    $(speedreadrDiv).click(function() {speedreadr.play_pause_button();});
 
     function handleRightClick(e) {
         if (!global_paused) speedreadr_setPause(true);
@@ -310,6 +323,8 @@ var speedreadr = function () {
     function checkJquery() {
         if ($) { //check if jquery is defined
             main();
+            //now that it has loaded add a click function to the main div, so it will play/pause when clicked
+            $('.speedReadr').click(function() {speedreadr.play_pause_button();});
         } else {
             window.setTimeout(checkJquery, 100);
         }
@@ -320,13 +335,12 @@ var speedreadr = function () {
     return {
         play_pause_button : function() {
             speedreadr_setPause(!global_paused);
-            showWord();
         },
         speedreadr_gotoNextElement : function() {
-            MoveToElement();
+            MoveToNextElement();
         },
         close : function() {
-        $(speedreadrDiv).hide();
-    }
+            $(speedreadrDiv).hide();
+        }
     };
 }();
