@@ -15,7 +15,7 @@ var speedreadr = function () {
     var speedreadr_font_size = '4em';
     var speedreadr_font_weight = 'bold';
     var speedreaderWPM = 350;
-    var speedreadr_words_at_a_time = 1;
+    var speedreadr_words_at_a_time = 5;
     var words_per_second = speedreaderWPM / 60;
     var words_per_milli = 1000 / words_per_second;
 
@@ -34,10 +34,13 @@ var speedreadr = function () {
     var speedreadrDiv;
 
     var global_moved_up=false;
+    var global_timeoutId=null;
+    var global_audio_mode=true;
 
-    /*
-     The main function is called when jquery has loaded to setup the main interface
-    */
+    /**
+     * The main function is called when jquery has loaded to setup the main interface
+     * 
+     */
     function main() {
         var body = $('body')[0];
 
@@ -56,8 +59,8 @@ var speedreadr = function () {
         $(speedreadrDiv).css('left', '15%');
         $(speedreadrDiv).css('right', '15%');
         $(speedreadrDiv).css('background', 'rgba(0,0,0,0.2)');
-        $(speedreadrDiv).css('border-top', '20px');
-        $(speedreadrDiv).css('padding-top', '5px');
+        //$(speedreadrDiv).css('border-top', '20px');
+        $(speedreadrDiv).css('padding-top', '20px');
         $(speedreadrDiv).css('padding-left', '5px');
         $(speedreadrDiv).css('z-index', '999'); //make sure this is always on top of everything
         $(speedreadrDiv).css('font-size', '1.0em');
@@ -83,7 +86,8 @@ var speedreadr = function () {
         $('#speedreadrCurrentWord').css('text-align', 'center');
         $('#speedreadrCurrentWord').css('padding-bottom', '10px');
         $('#speedreadrCurrentWord').css('color', 'white');
-        $('#speedreadrCurrentWord').css('background', 'rgba(0,0,0,0.0)');
+        //$('#speedreadrCurrentWord').css('background', 'rgba(0,0,0,0.0)');
+        $('#speedreadrWord').css('background', 'rgba(0,0,0,0.0)');
 
         $('#speedreadr_setwpm')[0].innerText = "Wpm:" + speedreaderWPM;
         $('#speedreadr_setfontsize')[0].innerText = "FontSize:" + speedreadr_font_size;
@@ -93,14 +97,18 @@ var speedreadr = function () {
         console.log("Speed reading!!");
     }
 
-    function speedreadr_setPause(bool) {
-        if (bool) {
-            //paused
+    /**
+     * Set whether the main speed reader should pause or not
+     * @param  {bool} shouldPause whether speedreadr should pause
+     * @return {void}
+     */
+    function speedreadr_setPause(shouldPause) {
+        if (shouldPause) {
             $(speedreadrDiv).css('background', 'rgba(0,0,0,0.2)');
             global_paused = true;
             $('#speedreadr_playPause')[0].innerText = "Play";
+            window.clearTimeout(global_timeoutId);
         } else {
-            //unpaused
             $(speedreadrDiv).css('background', 'rgba(0,0,0,1.0)');
             global_paused = false;
             $('#speedreadr_playPause')[0].innerText = "Pause";
@@ -108,41 +116,50 @@ var speedreadr = function () {
         }
     }
 
-    function setWpm(number) {
-        speedreadr_setProperty(number,"How many words per minute?", '#speedreadr_setwpm', "WPM:", speedreaderWPM);
-        words_per_second = speedreaderWPM/60;
-        words_per_milli = 1000/words_per_second;
-    }
 
+/*
+ The set property function allows users to set a value for properties such as WPM or font size using a window prompt
+*/
     function speedreadr_setProperty(number,question,element,property_name,property_to_set) {
         if (number===null)
         property_to_set = window.prompt(question,property_to_set);
         else property_to_set = number;
 
         $(element)[0].innerText = property_name + property_to_set;
+        return property_to_set
     }
+
+
 
     /*
      ShowWord is called for every word that is to be displayed
     */
     function showWord() {
         if (global_paused) return;
-        speedreadr_total_words++;
+        if (global_audio_mode) return;
+        
+        speedreadr_total_words=speedreadr_total_words+speedreadr_words_at_a_time;
         $('#speedreadr_showStats')[0].innerText = "Total words:" + speedreadr_total_words + " Delay:" + global_target_time_delay;
         if (current_element_words.length>global_i) {
-            $('#speedreadrCurrentWord')[0].innerText = current_element_words[global_i];
-            setTimeout(showWord,words_per_milli + global_target_time_delay);
+            var words_to_read = "";
+            for (i=0; i<speedreadr_words_at_a_time; i++) {
+                if (current_element_words[global_i] == undefined) break;
+                words_to_read += " "+current_element_words[global_i];
+                global_i=global_i + 1;
+            }
+            $('#speedreadrCurrentWord')[0].innerText=words_to_read;
             
-            global_i=global_i + 1;
+        
         }
         else {
             global_i = 0;
             setFinishedColorForElement(global_target);
             //now move on to the next element            
             MoveToNextElement();
+            global_target_time_delay=0; //reset time delay when moving element
             
-            setTimeout(showWord,words_per_milli);
         }
+        global_timeoutId=setTimeout(showWord,(words_per_milli*speedreadr_words_at_a_time) + global_target_time_delay);
     }
 
 /*
@@ -253,6 +270,8 @@ var speedreadr = function () {
 
         //now that we have the target lets get the word list from it
         current_element_words = getWordListFromString(global_target.textContent);
+        if (window.meSpeak && global_audio_mode) meSpeak.speak(''+current_element_words.join(''),{speed:speedreaderWPM});
+            
 
         //to make sure the user knows where it is reading lets scroll to the element we are currently reading
         setReadingColorForElement(global_target);
@@ -273,7 +292,7 @@ var speedreadr = function () {
             global_i = 0;
 
             global_target = move_down_element_tree(e.target);
-            global_next_target = global_target; //initialise next target?
+            global_next_target = global_target; //they both need to be the same initially, so when moving to the next element it will still goto global_target
             MoveToNextElement();
             speedreadr_setPause(false);
         }
@@ -317,6 +336,17 @@ var speedreadr = function () {
     function handleRightClick(e) {
         if (!global_paused) speedreadr_setPause(true);
     }
+
+function loadTTS() {
+    if (window.meSpeak) {
+    meSpeak.loadConfig("https://dl.dropbox.com/s/8077u3p9epji075/mespeak_config.json");
+    meSpeak.loadVoice('https://dl.dropbox.com/s/1m3idwfuq7spwr5/en-sc.json');
+    meSpeak.speak('Loaded');
+} else {
+    window.setTimeout(loadTTS, 100);
+}
+}
+
     /*
      Wait for JQuery to be loaded before running this script
     */
@@ -324,7 +354,9 @@ var speedreadr = function () {
         if ($) { //check if jquery is defined
             main();
             //now that it has loaded add a click function to the main div, so it will play/pause when clicked
-            $('.speedReadr').click(function() {speedreadr.play_pause_button();});
+            $('#speedreadrCurrentWord').click(function() {speedreadr.play_pause_button();});
+            if (global_audio_mode)
+            loadTTS();
         } else {
             window.setTimeout(checkJquery, 100);
         }
@@ -341,6 +373,17 @@ var speedreadr = function () {
         },
         close : function() {
             $(speedreadrDiv).hide();
+        },
+        /**
+         * SetWPM takes in how fast the speed reader should show words in words per minute
+         * It then performs internal calculations to work out how many milliseconds until the next word
+         * @param {int} number number of words per minute
+         */
+        setWpm : function(number) {
+            number=speedreadr_setProperty(number,"How many words per minute?", '#speedreadr_setwpm', "WPM:", speedreaderWPM);
+            speedreaderWPM=number;
+            words_per_second = speedreaderWPM/60;
+            words_per_milli = 1000/words_per_second;
         }
     };
 }();
